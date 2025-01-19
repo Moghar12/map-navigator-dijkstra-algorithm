@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Calcul du plus court chemin Dijkstra</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Polices Google (ex: Orbitron pour un effet futuriste) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link 
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" 
+    rel="stylesheet"
+  >
+
+  <!-- CSS de la bibliothèque Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <style>
+    /* Corps général de la page */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Orbitron', sans-serif; /* police futuriste */
+      background: linear-gradient(120deg, #0f0f0f, #202020);
+      color: #e0e0e0;
+      overflow-x: hidden;
+    }
+
+    /* Conteneur principal */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Titre principal */
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #00ffc6; /* Couleur futuriste cyan */
+      text-shadow: 0 0 8px rgba(0, 255, 198, 0.6);
+      margin-bottom: 2rem;
+    }
+
+    /* Zone de formulaire */
+    .input-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0.5rem auto;
+      max-width: 600px;
+    }
+
+    label {
+      width: 160px;
+      font-weight: 600;
+      color: #00ffc6;
+      text-shadow: 0 0 4px rgba(0, 255, 198, 0.6);
+      margin-right: 0.5rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #333;
+      border-radius: 4px;
+      background-color: #262626;
+      color: #fff;
+      outline: none;
+    }
+    input[type="text"]::placeholder {
+      color: #888;
+    }
+
+    /* Bouton de calcul */
+    button {
+      display: block;
+      margin: 1rem auto;
+      padding: 0.7rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      background: #00ffc6;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: 0 0 10px rgba(0, 255, 198, 0.4);
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    button:hover {
+      background: #00b38c;
+      box-shadow: 0 0 10px rgba(0, 255, 198, 0.7);
+    }
+
+    /* Style de la carte */
+    #map {
+      height: 500px;
+      width: 100%;
+      margin-bottom: 1rem;
+      border: 2px solid #00ffc6;
+      box-shadow: 0 0 20px rgba(0, 255, 198, 0.2);
+      border-radius: 6px;
+    }
+
+    /* Panneau d’instructions */
+    #directions-panel {
+      margin: 1rem auto;
+      max-width: 600px;
+      padding: 1rem;
+      border: 2px solid #00ffc6;
+      border-radius: 6px;
+      background-color: #141414;
+      box-shadow: 0 0 10px rgba(0, 255, 198, 0.2);
+    }
+    #directions-panel h3 {
+      margin-top: 0;
+      color: #00ffc6;
+      text-shadow: 0 0 4px rgba(0, 255, 198, 0.6);
+    }
+
+    /* Réponse ChatGPT */
+    #chatgpt-response {
+      margin: 2rem auto;
+      max-width: 600px;
+      background: #141414;
+      padding: 1rem;
+      border-radius: 6px;
+      border: 2px solid #00ffc6;
+      box-shadow: 0 0 10px rgba(0, 255, 198, 0.2);
+    }
+    #chatgpt-response p {
+      margin: 0;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Calcul du plus court chemin Dijkstra</h1>
+
+  <!-- Formulaire pour entrer les deux villes -->
+  <div class="input-container">
+    <label for="start">Ville de départ :</label>
+    <input type="text" id="start" placeholder="Paris" />
+  </div>
+  <div class="input-container">
+    <label for="end">Ville d'arrivée :</label>
+    <input type="text" id="end" placeholder="Lyon" />
+  </div>
+  <button onclick="calculateRoute()">Calculer l'itinéraire</button>
+
+  <!-- Zone pour la carte -->
+  <div id="map"></div>
+
+  <!-- Zone pour les instructions textuelles -->
+  <div id="directions-panel"></div>
+
+  <!-- Zone pour afficher la réponse de ChatGPT -->
+  <div id="chatgpt-response"></div>
+</div>
+
+<!-- Script de la bibliothèque Leaflet -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+  let map;
+  let routeLayer; // Couche pour afficher le tracé de l'itinéraire
+
+  /**
+   * Initialisation de la carte Leaflet centrée sur la France.
+   */
+  function initMap() {
+    // Centre la carte sur la France (latitude ~46.8, longitude ~2.3)
+    map = L.map('map').setView([46.8, 2.3], 6);
+
+    // Couche de tuiles OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+  }
+
+  /**
+   * Geocodage d'une adresse (ville) via Nominatim.
+   * Retourne un objet { lat, lon } ou null si introuvable.
+   */
+  async function geocode(address) {
+    const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(address);
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data && data.length > 0) {
+      return {
+        lat: data[0].lat,
+        lon: data[0].lon
+      };
+    } else {
+      return null;
+    }
+  }
+
+
+  async function calculateRoute() {
+    const start = document.getElementById('start').value;
+    const end = document.getElementById('end').value;
+
+    if (!start || !end) {
+      alert("Veuillez saisir une ville de départ et une ville d'arrivée.");
+      return;
+    }
+
+    const startCoord = await geocode(start);
+    const endCoord = await geocode(end);
+
+    if (!startCoord || !endCoord) {
+      alert("Impossible de géocoder l'une des adresses. Vérifiez l’orthographe.");
+      return;
+    }
+
+    const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startCoord.lon},${startCoord.lat};${endCoord.lon},${endCoord.lat}?geometries=geojson&overview=full`;
+
+    const routeResponse = await fetch(osrmUrl);
+    const routeData = await routeResponse.json();
+
+    if (!routeData || !routeData.routes || routeData.routes.length === 0) {
+      alert("Impossible de calculer l'itinéraire via OSRM.");
+      return;
+    }
+
+    const route = routeData.routes[0];
+    const coords = route.geometry.coordinates; // liste de [lon, lat]
+    const distance = (route.distance / 1000).toFixed(2); // en km
+    const duration = (route.duration / 60).toFixed(2); // en minutes
+
+    const latLngs = coords.map(coord => [coord[1], coord[0]]);
+
+    if (routeLayer) {
+      map.removeLayer(routeLayer);
+    }
+
+    routeLayer = L.polyline(latLngs, { color: 'blue', weight: 4 }).addTo(map);
+
+    map.fitBounds(routeLayer.getBounds());
+
+    const directionsPanel = document.getElementById('directions-panel');
+    directionsPanel.innerHTML = `
+      <h3>Itinéraire entre ${start} et ${end} :</h3>
+      <p>Distance : <strong>${distance} km</strong></p>
+      <p>Durée estimée : <strong>${duration} min</strong></p>
+    `;
+
+    const summary = 
+      `Itinéraire trouvé entre ${start} et ${end}. Distance : ${distance} km, Durée estimée : ${duration} minutes.`;
+    const gptResponse = await askChatGPT(summary);
+    if (gptResponse) {
+      document.getElementById('chatgpt-response').innerHTML = `
+        <p>${gptResponse}</p>
+      `;
+    }
+  }
+
+
+  async function askChatGPT(summary) {
+    try {
+      const apiKey = "ur api";
+
+      const apiUrl = "https://api.openai.com/v1/chat/completions";
+      const messages = [
+        {
+          role: "system",
+          content: "Tu es un assistant qui fournit des informations sur des trajets en voiture."
+        },
+        {
+          role: "user",
+          content: `Voici un résumé de l'itinéraire : ${summary}. Donne-moi un conseil ou un commentaire.`
+        }
+      ];
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: messages,
+          max_tokens: 100,
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Erreur lors de l’appel à l’API :", response);
+        return null;
+      }
+
+      const data = await response.json();
+
+      return data.choices[0].message.content;
+    } catch (error) {
+      console.error("Erreur :", error);
+      return null;
+    }
+  }
+
+
+  window.onload = initMap;
+</script>
+
+</body>
+</html>

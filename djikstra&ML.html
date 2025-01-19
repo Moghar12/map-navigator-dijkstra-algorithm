@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hybridation Dijkstra & Machine Learning</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        #map { height: 100vh; width: 100%; }
+        body { margin: 0; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        // Initialisation de la carte
+        var map = L.map('map').setView([34.24573, -6.58878], 10); // Centre sur Kénitra
+
+        // Ajout des tuiles OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Coordonnées calculées via hybridation (exemple simulé)
+        var coordinates = [
+            [34.24573, -6.58878], // Université Ibn Tofail, Kénitra
+            [34.21553, -6.62534],
+            [34.18263, -6.64512],
+            [34.15000, -6.70000],
+            [34.05000, -6.75000],
+            [33.99893, -6.84255]  // Université Mohammed V, Rabat
+        ];
+
+        // Tracer la ligne du chemin calculé
+        var polyline = L.polyline(coordinates, { color: 'blue', weight: 5 }).addTo(map);
+
+        // Ajouter un marqueur pour le point de départ
+        var startMarker = L.marker(coordinates[0]).addTo(map);
+        startMarker.bindPopup("<b>Départ : Université Ibn Tofail</b>").openPopup();
+
+        // Ajouter un marqueur pour le point d'arrivée
+        var endMarker = L.marker(coordinates[coordinates.length - 1]).addTo(map);
+        endMarker.bindPopup("<b>Arrivée : Université Mohammed V</b>");
+
+        // Adapter la vue pour inclure tout le chemin
+        map.fitBounds(polyline.getBounds());
+    </script>
+</body>
+</html>
