@@ -42,3 +42,35 @@ This project combines **Dijkstra’s Algorithm** for shortest path calculations 
 
 hybrid-dijkstra-regression/ ├── data/ │ └── road_data.csv # Example or user-provided dataset ├── models/ │ └── model.pkl # Trained regression model (auto-generated) ├── src/ │ ├── dijkstra.py # Dijkstra's algorithm implementation │ ├── regression.py # Linear Regression utilities (train, predict) │ ├── graph.py # Graph data structure and helper functions │ └── visualize.py # (Optional) Graph visualization ├── train_regression.py # Script for training and saving the ML model ├── main.py # Main script for hybrid pathfinding ├── requirements.txt # Dependencies └── README.md # This README file
  
+
+- **`train_regression.py`**: Loads the dataset from `data/`, trains a Linear Regression model, and saves it to `models/`.  
+- **`src/dijkstra.py`**: Contains the Dijkstra algorithm implementation.  
+- **`src/regression.py`**: Houses ML utilities for loading the model and making predictions.  
+- **`src/graph.py`**: Defines a `Graph` class to manage nodes and edges.  
+- **`main.py`**: Orchestrates the hybrid solution—loading the ML model, predicting edge weights, and running Dijkstra.  
+- **`src/visualize.py`** (Optional): Demonstrates how to visualize the graph and the shortest path.
+
+---
+
+## Prerequisites
+
+- **Python 3.7+**  
+- **pandas** (for data loading and manipulation)  
+- **NumPy** (for numerical operations)  
+- **scikit-learn** (for the Linear Regression model)  
+- **joblib** (for model serialization)  
+- **matplotlib** and **networkx** (optional, for visualization)
+
+---
+
+## Installation
+
+1. **Clone the Repository**  
+   ```bash
+   git clone https://github.com/your-username/hybrid-dijkstra-regression.git
+   cd hybrid-dijkstra-regression
+   
+1. **Contact**
+If you have any questions, feel free to reach out:
+
+Email: mogharali10@gmail.com
