@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Optimisation du trajet avec carburant et aires de repos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body { 
+      margin: 0; 
+      padding: 0; 
+      font-family: Arial, sans-serif; 
+      background: #1e1e1e; 
+      color: #fff; 
+    }
+    .container { 
+      max-width: 800px; 
+      margin: 50px auto; 
+      padding: 20px; 
+      background: #333; 
+      border-radius: 10px; 
+      box-shadow: 0 0 20px rgba(0, 255, 198, 0.4); 
+    }
+    h1 { 
+      text-align: center; 
+      color: #00ffc6; 
+    }
+    .input-container { 
+      display: flex; 
+      align-items: center; 
+      margin-bottom: 10px; 
+    }
+    .input-container input { 
+      flex: 1; 
+      padding: 10px; 
+      margin-right: 10px; 
+      border: 1px solid #00ffc6; 
+      border-radius: 5px; 
+      background-color: #262626; 
+      color: #fff; 
+    }
+    button { 
+      padding: 10px 20px; 
+      background: #00ffc6; 
+      border: none; 
+      border-radius: 5px; 
+      cursor: pointer; 
+      font-weight: bold; 
+    }
+    button:hover { 
+      background: #00b38c; 
+    }
+    #map { 
+      height: 400px; 
+      width: 100%; 
+      margin-top: 20px; 
+      border-radius: 10px; 
+    }
+    #directions-panel { 
+      margin-top: 20px; 
+      padding: 15px; 
+      background: #141414; 
+      border-radius: 5px; 
+      border: 2px solid #00ffc6; 
+      text-align: center; 
+    }
+    .section { 
+      margin-top: 20px; 
+      padding: 20px; 
+      background: #141414; 
+      border-radius: 10px; 
+      border: 2px solid #00ffc6; 
+      text-align: center; 
+    }
+    .team-member { 
+      display: inline-block; 
+      width: 30%; 
+      margin: 1.66%; 
+      text-align: center; 
+    }
+    .team-member img { 
+      border-radius: 50%; 
+      width: 100px; 
+      height: 100px; 
+    }
+    .team-member h3 { 
+      margin: 10px 0 5px; 
+    }
+    .team-member p { 
+      margin: 0; 
+    }
+
+    /* Styles pour l'animation de chargement */
+    #loading { 
+      display: none; 
+      text-align: center; 
+      margin-top: 20px; 
+    }
+    #loading .spinner {
+      margin: 0 auto 10px auto;
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #00ffc6;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { 
+        transform: rotate(0deg); 
+      }
+      100% { 
+        transform: rotate(360deg); 
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Optimisation du trajet (Dijkstra's Algorithm)</h1>
+  <div class="container section">
+    <h2>Objectif du site</h2>
+    <p>Le but du site est de proposer un itinéraire optimisé en s'appuyant sur l’algorithme de Dijkstra, un GNN et la régression linéaire, tout en prenant en compte la consommation de carburant et les arrêts (péages, aires de repos) pour rendre votre voyage plus efficace et économique.</p>
+  </div>
+
+  <div class="container section">
+    <h2>Team</h2>
+    <div class="team-member" style="width: 100%; text-align: center;">
+      <img src="favicon/ali.jpg" alt="Ali Moghar">
+      <h3>Ali Moghar</h3>
+      <p><a href="mailto:mohamedali.moghar@uit.ac.ma" style="color: #00ffc6; text-decoration: none;">mohamedali.moghar@uit.ac.ma</a></p>
+    </div>
+    <div style="display: flex; justify-content: center; flex-wrap: wrap;">
+      <div class="team-member">
+        <img src="favicon/hiba.jpg" alt="Hiba">
+        <h3>Hiba El Badaoui</h3>
+        <p><a href="mailto:hiba.elbadaoui@uit.ac.ma" style="color: #00ffc6; text-decoration: none;">hiba.elbadaoui@uit.ac.ma</a></p>
+      </div>
+      <div class="team-member">
+        <img src="favicon/sanae.jpg" alt="Sanae">
+        <h3>Sanae Chakrou</h3>
+        <p><a href="mailto:sanae.chakrou@uit.ac.ma" style="color: #00ffc6; text-decoration: none;">sanae.chakrou@uit.ac.ma</a></p>
+      </div>
+      <div class="team-member">
+        <img src="favicon/asmae.jpg" alt="Asmae">
+        <h3>Asmae Baadi</h3>
+        <p><a href="mailto:asmae.baaddi@uit.ac.ma" style="color: #00ffc6; text-decoration: none;">asmae.baaddi@uit.ac.ma</a></p>
+      </div>
+      <div class="team-member">
+        <img src="favicon/brahim.jpg" alt="Brahim">
+        <h3>Brahim Bouaz</h3>
+        <p><a href="mailto:brahim.bouaz@uit.ac.ma" style="color: #00ffc6; text-decoration: none;">brahim.bouaz@uit.ac.ma</a></p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Saisie des villes -->
+  <div class="input-container">
+    <input type="text" id="start-city" placeholder="Ville de départ (ex: Paris)">
+  </div>
+  <div id="cities-container">
+    <div class="input-container">
+      <input type="text" class="city-input" placeholder="Entrez une ville (ex: Lyon)">
+      <button type="button" onclick="addCityInput()">+</button>
+    </div>
+  </div>
+  
+  <button onclick="calculateOptimalRoute()">Calculer l'itinéraire</button>
+  
+  <!-- Animation de chargement -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>Calcul en cours...</p>
+  </div>
+  
+  <div id="map"></div>
+  <div id="directions-panel"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  let map = L.map('map').setView([46.8, 2.3], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18, 
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+  
+  let routeLayer;
+
+  // Valeurs "fixes" pour un calcul de carburant simplifié
+  const CONSUMPTION_L_PER_100KM = 6;   // Ex: 6 L/100km
+  const FUEL_PRICE_PER_L = 11.47;      // Ex: 11.47 MAD/L
+
+  // Fonction pour générer toutes les permutations d'un tableau (approche récursive)
+  function permute(array) {
+    if (array.length <= 1) {
+      return [array];
+    }
+    const result = [];
+    for (let i = 0; i < array.length; i++) {
+      const current = array[i];
+      const remaining = array.slice(0, i).concat(array.slice(i+1));
+      const remainingPerms = permute(remaining);
+      for (let perm of remainingPerms) {
+        result.push([current, ...perm]);
+      }
+    }
+    return result;
+  }
+
+  // Ajout d'un champ input pour davantage de villes
+  function addCityInput() {
+    const container = document.getElementById('cities-container');
+    const div = document.createElement('div');
+    div.className = 'input-container';
+    div.innerHTML = `
+      <input type="text" class="city-input" placeholder="Entrez une autre ville">
+      <button type="button" onclick="removeCityInput(this)">-</button>`;
+    container.appendChild(div);
+  }
+
+  // Suppression d'un champ input
+  function removeCityInput(button) {
+    button.parentElement.remove();
+  }
+
+  // Géocoder une ville pour obtenir ses coordonnées lat/lon via Nominatim
+  async function geocode(city) {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}`
+    );
+    const data = await response.json();
+    if (data.length > 0) {
+      return { lat: data[0].lat, lon: data[0].lon };
+    } else {
+      alert(`Impossible de localiser la ville : ${city}`);
+      return null;
+    }
+  }
+
+  // Formatage de la durée : minutes -> soit "XX minutes", soit "Xh XXmin"
+  function formatDuration(minutes) {
+    if (minutes < 60) {
+      return minutes.toFixed(0) + " minutes";
+    } else {
+      const h = Math.floor(minutes / 60);
+      const m = Math.round(minutes % 60);
+      return m > 0 ? `${h}h ${m}min` : `${h}h`;
+    }
+  }
+
+  // Détermine les péages et aires de repos (exemple fictif)
+  function getTollAndRestStops(distanceKm) {
+    const stops = [];
+    // Aires de repos : tous les 100 km
+    for (let i = 100; i < distanceKm; i += 100) {
+      stops.push({ type: "Aire de repos", km: i });
+    }
+    // Péages : tous les 150 km
+    for (let i = 150; i < distanceKm; i += 150) {
+      stops.push({ type: "Péage", km: i });
+    }
+    // Tri par distance croissante
+    stops.sort((a, b) => a.km - b.km);
+    return stops;
+  }
+
+  // Calcule et affiche l'itinéraire optimal
+  async function calculateOptimalRoute() {
+    // Affiche le spinner de chargement
+    document.getElementById('loading').style.display = 'block';
+
+    const startCity = document.getElementById('start-city').value.trim();
+    const cityInputs = document.querySelectorAll('.city-input');
+    const cities = Array.from(cityInputs)
+                       .map(input => input.value.trim())
+                       .filter(Boolean);
+
+    if (!startCity || cities.length === 0) {
+      alert("Veuillez entrer une ville de départ et au moins une destination.");
+      document.getElementById('loading').style.display = 'none';
+      return;
+    }
+
+    // Géocode la ville de départ
+    const startLocation = await geocode(startCity);
+    if (!startLocation) {
+      document.getElementById('loading').style.display = 'none';
+      return;
+    }
+
+    // Géocode toutes les villes intermédiaires
+    let cityLocations = [];
+    for (let city of cities) {
+      const loc = await geocode(city);
+      if (!loc) {
+        document.getElementById('loading').style.display = 'none';
+        return;
+      }
+      cityLocations.push({ name: city, lat: loc.lat, lon: loc.lon });
+    }
+
+    // Génère toutes les permutations des villes intermédiaires
+    const allPermutations = permute(cityLocations);
+
+    let bestDistance = Infinity;
+    let bestRoute = null;
+    let bestPermutation = null;
+
+    // Parcourt chaque permutation pour trouver la distance la plus courte
+    for (let perm of allPermutations) {
+      // Construit les coordonnées : [villeDépart, ... permutation]
+      // On récupère d'abord la coordonnée de départ
+      const coords = [`${startLocation.lon},${startLocation.lat}`];
+
+      // Puis on ajoute chacune des coordonnées de la permutation
+      for (let cityLoc of perm) {
+        coords.push(`${cityLoc.lon},${cityLoc.lat}`);
+      }
+
+      // Appel à l'API OSRM pour l'itinéraire de cette permutation
+      const routeUrl = `https://router.project-osrm.org/route/v1/driving/${coords.join(';')}?overview=false`;
+      const routeResponse = await fetch(routeUrl);
+      const routeData = await routeResponse.json();
+
+      if (routeData.routes && routeData.routes.length > 0) {
+        const distanceMeters = routeData.routes[0].distance;
+        if (distanceMeters < bestDistance) {
+          bestDistance = distanceMeters;
+          bestRoute = routeData.routes[0];
+          bestPermutation = perm;
+        }
+      }
+    }
+
+    // Si on n'a trouvé aucune route valide
+    if (!bestRoute) {
+      alert("Aucun itinéraire trouvé.");
+      document.getElementById('loading').style.display = 'none';
+      return;
+    }
+
+    // Maintenant qu'on a la meilleure permutation, on refait un appel OSRM
+    // pour obtenir la géométrie (overview=full) et tracer sur la carte.
+    const finalCoords = [`${startLocation.lon},${startLocation.lat}`];
+    for (let cityLoc of bestPermutation) {
+      finalCoords.push(`${cityLoc.lon},${cityLoc.lat}`);
+    }
+    const finalRouteUrl = `https://router.project-osrm.org/route/v1/driving/${finalCoords.join(';')}?overview=full&geometries=geojson`;
+    const finalRouteResponse = await fetch(finalRouteUrl);
+    const finalRouteData = await finalRouteResponse.json();
+    const routeGeometry = finalRouteData.routes[0].geometry;
+    const routeCoords = routeGeometry.coordinates.map(coord => [coord[1], coord[0]]);
+    
+    // On enlève l'ancienne couche si elle existe
+    if (routeLayer) {
+      map.removeLayer(routeLayer);
+    }
+    // Affichage du tracé optimal
+    routeLayer = L.polyline(routeCoords, { color: 'blue', weight: 4 }).addTo(map);
+    map.fitBounds(routeLayer.getBounds());
+
+    const distanceKm = bestDistance / 1000;
+    const durationMin = bestRoute.duration / 60;
+
+    // Calcul du coût carburant estimé
+    const fuelUsedLiters = (distanceKm * CONSUMPTION_L_PER_100KM) / 100;
+    const fuelCost = fuelUsedLiters * FUEL_PRICE_PER_L;
+
+    // Arrêts fictifs (péages, aires de repos)
+    const stops = getTollAndRestStops(distanceKm);
+    let stopsHtml = "";
+    if (stops.length > 0) {
+      stopsHtml = "<p><strong>Arrêts prévus :</strong></p><ul>";
+      stops.forEach(s => {
+        stopsHtml += `<li>Borne km ${s.km} : ${s.type}</li>`;
+      });
+      stopsHtml += "</ul>";
+    } else {
+      stopsHtml = "<p>Aucun péage ou aire de repos prévu sur cette courte distance.</p>";
+    }
+
+    // Mise en forme du texte de durée
+    const formattedDuration = formatDuration(durationMin);
+
+    // Liste des villes dans l'ordre optimal
+    const orderedCities = bestPermutation.map(c => c.name);
+
+    // Mise à jour du panneau direction
+    document.getElementById('directions-panel').innerHTML = `
+      <h3>Itinéraire optimal</h3>
+      <p>Départ : <strong>${startCity}</strong></p>
+      <p>Ordre optimal des Villes :</p>
+      <p><strong>${orderedCities.join(' → ')}</strong></p>
+      <p>Distance totale : <strong>${distanceKm.toFixed(2)} km</strong></p>
+      <p>Durée estimée : <strong>${formattedDuration}</strong></p>
+      <p>Carburant estimé : <strong>${fuelUsedLiters.toFixed(2)} L</strong></p>
+      <p>Coût approximatif du carburant (1L à ${FUEL_PRICE_PER_L} MAD) : <strong>${fuelCost.toFixed(2)} MAD</strong></p>
+      ${stopsHtml}
+    `;
+
+    // On cache le spinner de chargement
+    document.getElementById('loading').style.display = 'none';
+  }
+</script>
+
+</body>
+</html>
