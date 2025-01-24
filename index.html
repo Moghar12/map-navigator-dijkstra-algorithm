@@ -252,11 +252,11 @@
   <br>
   <!-- Saisie des villes -->
   <div class="input-container">
-    <input type="text" id="start-city" placeholder="Ville de départ (ex: Paris)">
+    <input type="text" id="start-city" placeholder="Ville de départ (ex: Rabat)">
   </div>
   <div id="cities-container">
     <div class="input-container">
-      <input type="text" class="city-input" placeholder="Entrez une ville (ex: Lyon)">
+      <input type="text" class="city-input" placeholder="Entrez une ville (ex: Casablanca)">
       <button type="button" onclick="addCityInput()">+</button>
     </div>
   </div>
@@ -275,11 +275,12 @@
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-  let map = L.map('map').setView([46.8, 2.3], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18, 
-    attribution: '© OpenStreetMap'
-  }).addTo(map);
+let map = L.map('map').setView([31.7917, -7.0926], 6);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 18,
+  attribution: '© OpenStreetMap'
+}).addTo(map);
   
   let routeLayer;
 
