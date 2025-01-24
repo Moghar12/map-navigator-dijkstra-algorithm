@@ -468,13 +468,13 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
      const stops = getTollAndRestStops(distanceKm);
      let stopsHtml = "";
      if (stops.length > 0) {
-       stopsHtml = "<p display='none'><strong>Arrêts prévus :</strong></p><ul>";
+       stopsHtml = "<p><strong>Arrêts prévus :</strong></p><ul>";
        stops.forEach(s => {
-         stopsHtml += `<li display='none'>Borne km ${s.km} : ${s.type}</li>`;
+         stopsHtml += `<li>Borne km ${s.km} : ${s.type}</li>`;
        });
        stopsHtml += "</ul>";
      } else {
-       stopsHtml = "<p display='none'>Aucun péage ou aire de repos prévu sur cette courte distance.</p>";
+       stopsHtml = "<p>Aucun péage ou aire de repos prévu sur cette courte distance.</p>";
      }
 
     // Mise en forme du texte de durée
