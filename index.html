@@ -2,100 +2,153 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Map Navigator Dijkstra's Algorithm</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Optimisation du trajet avec carburant et aires de repos</title>
+  <!-- Assure un bon rendu sur mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
   <style>
-    body { 
-      margin: 0; 
-      padding: 0; 
-      font-family: Arial, sans-serif; 
-      background: #1e1e1e; 
-      color: #fff; 
-    }
-    .container { 
-      max-width: 800px; 
-      margin: 50px auto; 
-      padding: 20px; 
-      background: #333; 
-      border-radius: 10px; 
-      box-shadow: 0 0 20px rgba(0, 255, 198, 0.4); 
-    }
-    h1 { 
-      text-align: center; 
-      color: #00ffc6; 
-    }
-    .input-container { 
-      display: flex; 
-      align-items: center; 
-      margin-bottom: 10px; 
-    }
-    .input-container input { 
-      flex: 1; 
-      padding: 10px; 
-      margin-right: 10px; 
-      border: 1px solid #00ffc6; 
-      border-radius: 5px; 
-      background-color: #262626; 
-      color: #fff; 
-    }
-    button { 
-      padding: 10px 20px; 
-      background: #00ffc6; 
-      border: none; 
-      border-radius: 5px; 
-      cursor: pointer; 
-      font-weight: bold; 
-    }
-    button:hover { 
-      background: #00b38c; 
-    }
-    #map { 
-      height: 400px; 
-      width: 100%; 
-      margin-top: 20px; 
-      border-radius: 10px; 
-    }
-    #directions-panel { 
-      margin-top: 20px; 
-      padding: 15px; 
-      background: #141414; 
-      border-radius: 5px; 
-      border: 2px solid #00ffc6; 
-      text-align: center; 
-    }
-    .section { 
-      margin-top: 20px; 
-      padding: 20px; 
-      background: #141414; 
-      border-radius: 10px; 
-      border: 2px solid #00ffc6; 
-      text-align: center; 
-    }
-    .team-member { 
-      display: inline-block; 
-      width: 30%; 
-      margin: 1.66%; 
-      text-align: center; 
-    }
-    .team-member img { 
-      border-radius: 50%; 
-      width: 100px; 
-      height: 100px; 
-    }
-    .team-member h3 { 
-      margin: 10px 0 5px; 
-    }
-    .team-member p { 
-      margin: 0; 
+    /* RESET/BASE */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-    /* Styles pour l'animation de chargement */
-    #loading { 
-      display: none; 
-      text-align: center; 
-      margin-top: 20px; 
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e1e1e;
+      color: #fff;
+      margin: 0;
     }
+
+    a {
+      color: #00ffc6;
+      text-decoration: none;
+    }
+
+    /* CONTAINER GLOBALE */
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #333;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 255, 198, 0.4);
+    }
+
+    h1 {
+      text-align: center;
+      color: #00ffc6;
+      margin-bottom: 20px;
+    }
+
+    /* BOUTONS & INPUTS */
+    button {
+      padding: 10px 20px;
+      background: #00ffc6;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+
+    button:hover {
+      background: #00b38c;
+    }
+
+    .input-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .input-container input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #00ffc6;
+      border-radius: 5px;
+      background-color: #262626;
+      color: #fff;
+    }
+
+    .input-container button {
+      margin: 0 0 0 10px;
+    }
+
+    /* MAP */
+    #map {
+      height: 400px;
+      width: 100%;
+      margin-top: 20px;
+      border-radius: 10px;
+    }
+
+    /* PANNEAU DE RÉSULTATS */
+    #directions-panel {
+      margin-top: 20px;
+      padding: 15px;
+      background: #141414;
+      border-radius: 5px;
+      border: 2px solid #00ffc6;
+      text-align: center;
+    }
+
+    /* SECTIONS GÉNÉRIQUES */
+    .section {
+      margin-top: 20px;
+      padding: 20px;
+      background: #141414;
+      border-radius: 10px;
+      border: 2px solid #00ffc6;
+      text-align: center;
+    }
+
+    /* ÉQUIPE */
+    /* On englobe les membres d'équipe dans un conteneur flex */
+    .team-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .team-member {
+      text-align: center;
+      /* On force une largeur max pour éviter l’écrasement sur petit écran */
+      flex: 1 1 150px;
+      max-width: 200px;
+      margin: 0 auto;
+    }
+
+    .team-member img {
+      border-radius: 50%;
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      display: block;
+      margin: 0 auto 10px auto;
+    }
+
+    .team-member h3 {
+      margin: 10px 0 5px;
+      font-size: 1.1rem;
+    }
+
+    .team-member p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    /* ANIMATION DE CHARGEMENT */
+    #loading {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+    }
+
     #loading .spinner {
       margin: 0 auto 10px auto;
       border: 8px solid #f3f3f3;
@@ -105,56 +158,96 @@
       height: 50px;
       animation: spin 1s linear infinite;
     }
+
     @keyframes spin {
-      0% { 
-        transform: rotate(0deg); 
+      0% {
+        transform: rotate(0deg);
       }
-      100% { 
-        transform: rotate(360deg); 
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* MEDIA QUERIES POUR LES PETITS ÉCRANS */
+    @media (max-width: 768px) {
+      .container {
+        margin: 20px;
+        padding: 15px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .input-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .input-container input {
+        margin-bottom: 10px;
+        margin-right: 0;
+      }
+
+      .team-container {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .team-member {
+        width: 100%;
+        max-width: 250px;
       }
     }
   </style>
+
 </head>
 <body>
 
 <div class="container">
   <h1>Optimisation du trajet (Dijkstra's Algorithm)</h1>
-  <div class="container section">
+  
+  <!-- SECTION : Objectif du site -->
+  <div class="section">
     <h2>Objectif du site</h2>
+    <br>
     <p>Le but du site est de proposer un itinéraire optimisé en s'appuyant sur l’algorithme de Dijkstra, un GNN et la régression linéaire, tout en prenant en compte la consommation de carburant et les arrêts (péages, aires de repos) pour rendre votre voyage plus efficace et économique.</p>
   </div>
 
-  <div class="container section">
+  <!-- SECTION : Équipe -->
+  <div class="section">
     <h2>Team</h2>
-    <div class="team-member" style="width: 100%; text-align: center;">
-      <img src="favicon/ali.jpg" alt="Ali Moghar">
-      <h3>Ali Moghar</h3>
-      <p><a href="mailto:mohamedali.moghar@uit.ac.ma" style="color: #00ffc6; text-decoration: none;">mohamedali.moghar@uit.ac.ma</a></p>
-    </div>
-    <div style="display: flex; justify-content: center; flex-wrap: wrap;">
-      <div class="team-member">
-        <img src="favicon/hiba.jpg" alt="Hiba">
+    <!-- Conteneur flex pour l’équipe -->
+    <div class="team-container">
+      <div class="team-member" style="width: 100%;">
+        <img src="favicon/hiba.jpg" alt="Hiba El Badaoui">
         <h3>Hiba El Badaoui</h3>
-        <p><a href="mailto:hiba.elbadaoui@uit.ac.ma" style="color: #00ffc6; text-decoration: none;">hiba.elbadaoui@uit.ac.ma</a></p>
+         <p><a href="mailto:hiba.elbadaoui@uit.ac.ma">hiba.elbadaoui@uit.ac.ma</a></p>
+      </div>
+      
+      <div class="team-member">
+        <img src="favicon/ali.jpg" alt="Ali Moghar">
+        <h3>Ali Moghar</h3>
+        <p><a href="mailto:mohamedali.moghar@uit.ac.ma">mohamedali.moghar@uit.ac.ma</a></p>
+       
       </div>
       <div class="team-member">
         <img src="favicon/sanae.jpg" alt="Sanae">
         <h3>Sanae Chakrou</h3>
-        <p><a href="mailto:sanae.chakrou@uit.ac.ma" style="color: #00ffc6; text-decoration: none;">sanae.chakrou@uit.ac.ma</a></p>
+        <p><a href="mailto:sanae.chakrou@uit.ac.ma">sanae.chakrou@uit.ac.ma</a></p>
       </div>
       <div class="team-member">
         <img src="favicon/asmae.jpg" alt="Asmae">
         <h3>Asmae Baadi</h3>
-        <p><a href="mailto:asmae.baaddi@uit.ac.ma" style="color: #00ffc6; text-decoration: none;">asmae.baaddi@uit.ac.ma</a></p>
+        <p><a href="mailto:asmae.baaddi@uit.ac.ma">asmae.baaddi@uit.ac.ma</a></p>
       </div>
       <div class="team-member">
         <img src="favicon/brahim.jpg" alt="Brahim">
         <h3>Brahim Bouaz</h3>
-        <p><a href="mailto:brahim.bouaz@uit.ac.ma" style="color: #00ffc6; text-decoration: none;">brahim.bouaz@uit.ac.ma</a></p>
+        <p><a href="mailto:brahim.bouaz@uit.ac.ma">brahim.bouaz@uit.ac.ma</a></p>
       </div>
     </div>
   </div>
-  
   <!-- Saisie des villes -->
   <div class="input-container">
     <input type="text" id="start-city" placeholder="Ville de départ (ex: Paris)">
